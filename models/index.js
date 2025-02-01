@@ -3,7 +3,9 @@ import User from './user.js';
 import UserCredentials from './user.credentials.js';
 import Job from './job.js';
 import JobPortal from './job.portals.js';
+import JobDocument from './job.documents.js';
 
+// Define associations
 User.hasOne(UserCredentials, {
   foreignKey: 'user_id',
   as: 'credentials'
@@ -16,6 +18,12 @@ UserCredentials.belongsTo(User, {
 
 Job.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 Job.belongsTo(JobPortal, { foreignKey: 'portal_id', as: 'portal' });
+Job.hasMany(JobDocument, { foreignKey: 'job_id' });
+
+JobPortal.hasMany(JobDocument, { foreignKey: 'portal_id' });
+
+JobDocument.belongsTo(Job, { foreignKey: 'job_id' });
+JobDocument.belongsTo(JobPortal, { foreignKey: 'portal_id' });
 
 
 // Initialize all models
@@ -24,7 +32,7 @@ const models = {
   UserCredentials,
   JobPortal,
   Job,
-//   JobDocument
+  JobDocument
 };
 
 // Test database connection and sync models
@@ -41,4 +49,4 @@ async function initDatabase() {
   }
 }
 
-export { sequelize, User, UserCredentials, JobPortal, Job, initDatabase };
+export { sequelize, User, UserCredentials, JobPortal, Job, JobDocument, initDatabase };

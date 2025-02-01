@@ -1,6 +1,6 @@
 import express from 'express';
 import { createPortals, deletePortal, getPortals, updatePortal } from './portals.controller.js';
-import upload from '../../middleware/multer.js';
+import { upload } from '../../middleware/multer.js';
 
 const portalRouter = express.Router();
 

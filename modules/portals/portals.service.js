@@ -179,3 +179,4 @@ export const updateJobPortal = async (id, portalData) => {
         throw error; 
     }
 };
+

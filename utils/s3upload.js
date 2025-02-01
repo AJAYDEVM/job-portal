@@ -7,6 +7,7 @@ const s3Client = new S3Client({
 });
 
 const BUCKET_NAME = 'beo_portal_bucket';
+const DOC_BUCKET = 'beo_portral_doc'
 
 export const uploadToS3 = async (logoData, portalId) => {
   const { originalname, buffer, mimetype } = logoData;
@@ -51,5 +52,28 @@ export const deleteFromS3 = async (s3Url) => {
     } catch (error) {
       console.error('S3 delete error:', error);
       throw new Error('Failed to delete file from S3');
+    }
+  };
+
+  export const uploadDocToS3 = async (document, portalId, jobId) => {
+    const { originalname, buffer, mimetype } = document;
+    try {
+      const filePath = `${portalId}/${jobId}/${originalname}`;
+  
+      const uploadParams = {
+        Bucket: DOC_BUCKET,
+        Key: filePath,
+        Body: buffer,
+        ContentType: mimetype
+      };
+  
+      // await s3Client.send(new PutObjectCommand(uploadParams));
+  
+      return {
+        docUrl: `https://${DOC_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${filePath}`
+      };
+    } catch (error) {
+      console.error('S3 upload error:', error);
+      throw new Error('Failed to upload file to S3');
     }
   };

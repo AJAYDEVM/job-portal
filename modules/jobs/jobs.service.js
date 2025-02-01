@@ -1,8 +1,10 @@
-import { JobPortal } from '../../models/index.js';
+import { JobPortal, JobDocument } from '../../models/index.js';
 import sequelize from '../../config/db.js';
 import codes from '../../utils/httpStatusCode.js';
 import { responseMessage } from '../../utils/message.js';
 import Job from '../../models/job.js';
+import { uploadDocToS3 } from '../../utils/s3upload.js';
+import { extractFormattedText } from '../../utils/processDoc.js';
 
 export const saveJob = async (jobData) => {
 
@@ -115,6 +117,71 @@ export const deleteSavedJob = async (id, user_id) => {
         
         return isexist;
     } catch (error) {
+        throw error;
+    }
+};
+
+export const uploadJobDocumentService = async (uploadData) => {
+    const { jobId, portalId, document, userId } = uploadData;
+    const transaction = await sequelize.transaction();
+
+    try {
+        const job = await Job.findOne({
+            where: { id: jobId, created_by: userId },
+            transaction
+        });
+
+        if (!job) {
+            throw { 
+                status: codes.NotFound, 
+                message: responseMessage.JOB_NOT_FOUND 
+            };
+        }
+        console.log('1.......');
+
+        const portal = await JobPortal.findByPk(portalId, { transaction });
+        if (!portal) {
+            throw { 
+                status: codes.NotFound, 
+                message: responseMessage.PORTAL_NOT_FOUND
+            };
+        }
+
+        const existingDocument = await JobDocument.findOne({
+            where: { job_id: jobId, portal_id: portalId },
+            transaction
+        });
+
+        if (existingDocument) {
+            throw { 
+                status: codes.Conflict, 
+                message: responseMessage.DOC_EXIST
+            };
+        }
+
+        // Upload file to S3
+        const { docUrl } = await uploadDocToS3(uploadData.document, portalId, jobId);
+        console.log('fileUrl', docUrl);
+        
+        // Extract formatted text
+        const formattedText = await extractFormattedText(uploadData.document);
+        console.log('formattedText', formattedText);
+        // return null;
+        // Create job document record
+        const jobDocument = await JobDocument.create({
+            job_id: jobId,
+            portal_id: portalId,
+            file_name: document.originalname,
+            file_url: docUrl,
+            file_type: document.mimetype.split('/').pop(),
+            file_size: document.size,
+            extracted_text: formattedText
+        }, { transaction });
+
+        await transaction.commit();
+        return jobDocument;
+    } catch (error) {
+        await transaction.rollback();
         throw error;
     }
 };

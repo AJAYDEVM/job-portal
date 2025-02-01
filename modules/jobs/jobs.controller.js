@@ -1,9 +1,9 @@
 import { errorResponse, successResponse } from '../../utils/response.js';
 import { responseMessage } from '../../utils/message.js';
 import codes from '../../utils/httpStatusCode.js';
-import { deleteSavedJob, getSavedJobs, saveJob, updatedSavedJobs } from './jobs.service.js';
+import { deleteSavedJob, getSavedJobs, saveJob, updatedSavedJobs, uploadJobDocumentService } from './jobs.service.js';
 import { createJobSchema, updateJobSchema } from '../../validators/job.validator.js';
-
+import Joi from 'joi';
 
 
 export const createJob = async (req, res) => {
@@ -113,3 +113,43 @@ export const deleteJob = async (req, res) => {
       );
     }
   }; 
+
+  export const uploadJobDocument = async (req, res) => {
+    try {
+        // Validate request parameters
+        console.log('req.dole', req.file);
+        
+        const paramsSchema = Joi.object({
+            id: Joi.string().uuid().required(),
+            portalId: Joi.string().uuid().required()
+        });
+
+        const { error: paramsError } = paramsSchema.validate(req.params);
+        if (paramsError) {
+            return errorResponse(res, 'Invalid job or portal ID', true, codes.BadRequest);
+        }
+
+        const reqData = {
+            jobId: req.params.id,
+            portalId: req.params.portalId,
+            document: req.file,
+            userId: req.user.id 
+        }
+
+        console.log('reqdata', reqData);
+        // return
+        // Upload and process document
+        const result = await uploadJobDocumentService(reqData);
+
+        return successResponse(res, 'Document uploaded successfully', result);
+    } catch (error) {
+        console.error('Job document upload error:', error);
+        const statusCode = error.status || codes.InternalServerError;
+        return errorResponse(
+            res, 
+            error.message || responseMessage.INTERNAL_SERVER_ERROR, 
+            true, 
+            statusCode
+        );
+    }
+};

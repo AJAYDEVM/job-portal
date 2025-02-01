@@ -12,5 +12,8 @@ export const responseMessage = {
     JOB_CREATED: 'Job Created',
     JOB_FETCHED: 'Job Fetched successfully',
     INVALID_JOB_ID: 'Invalid job id',
-    JOB_UPDATED: 'Job updated'
+    JOB_UPDATED: 'Job updated',
+    JOB_NOT_FOUND:'Job not found or you do not have permission',
+    PORTAL_NOT_FOUND: 'Portal not found' ,
+    DOC_EXIST: 'Document for this job and portal already exists' 
 }
